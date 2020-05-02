@@ -49,13 +49,7 @@ const findUserUsingName = async (req, res, next) => {
     "-_id -createdAt -updatedAt -__v"
   );
 
-  if (foundUser) {
-    return foundUser.id;
-  } else {
-    const err = new Error("No data found");
-    err.statusCode = 404;
-    next(err);
-  }
+  return foundUser.id;
 };
 
 const createOneReview = wrapAsync(async (req, res, next) => {

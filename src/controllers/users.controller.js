@@ -26,19 +26,13 @@ const loginSchema = Joi.object({
 
 const findOneUser = wrapAsync(async (req, res, next) => {
   const username = req.user.name;
+
   const foundUser = await UserModel.findOne(
     { username: username },
     "-_id -createdAt -updatedAt -__v"
   );
-
-  if (foundUser) {
-    const { password, ...userInfoNoPassword } = foundUser.toObject();
-    res.status(200).json(userInfoNoPassword);
-  } else {
-    const err = new Error("No data found");
-    err.statusCode = 404;
-    next(err);
-  }
+  const { password, ...userInfoNoPassword } = foundUser.toObject();
+  res.status(200).json(userInfoNoPassword);
 });
 
 const createOneUser = wrapAsync(async (req, res, next) => {
@@ -91,7 +85,7 @@ const createCookie = (req, res) => {
       //username: username,
       expires: expiryDate,
       httpOnly: true,
-      //signed: true,
+      signed: true,
     });
   } else {
     res.cookie(cookieName, token, {
@@ -99,7 +93,7 @@ const createCookie = (req, res) => {
       expires: expiryDate,
       httpOnly: true,
       secure: true,
-      //signed: true,
+      signed: true,
     });
   }
 

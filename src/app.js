@@ -4,7 +4,8 @@ require("./utils/db"); //this is to connect to the DB
 const cookieParser = require("cookie-parser");
 
 app.use(express.json()); // need for body parser later
-app.use(cookieParser()); // for parsing of cookies
+//app.use(cookieParser()); // for parsing of cookies
+app.use(cookieParser("someSecretKey")); // for parsing of cookies
 
 const companyRouter = require("./routes/companies.route");
 const userRouter = require("./routes/users.route");

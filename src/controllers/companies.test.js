@@ -10,14 +10,23 @@ jest.mock("jsonwebtoken");
 const jwt = require("jsonwebtoken");
 
 describe("Companies Route", () => {
-  // let signedInAgent;
+  let signedInAgent;
+
   afterAll(async () => {
     await teardownMongoose();
   });
 
   beforeEach(async () => {
-    await UsersModel.create(usersData);
     await CompaniesModel.create(companiesData);
+    await UsersModel.create(usersData);
+
+    const defaultLoginUser = { username: "humburn", password: "123456789" };
+    signedInAgent = request.agent(app);
+
+    const response = await signedInAgent
+      .post("/user/login")
+      .send(defaultLoginUser);
+    //console.log(response);
   });
 
   afterEach(async () => {
@@ -61,7 +70,7 @@ describe("Companies Route", () => {
     expect(actualValue.error).toEqual(expectedValue);
   });
 
-  it("POST /:id/review should add a review to the correct company when user is authorised", async () => {
+  it("POST /:id/reviews should add a review to the correct company when user is authorised", async () => {
     const companyID = companiesData[0].id;
     const review = {
       rating: 3,
@@ -81,16 +90,11 @@ describe("Companies Route", () => {
       name: "humburn",
     }); //to mock DB login
 
-    const { body: actualValue } = await request(app)
+    const { body: actualValue } = await signedInAgent //request(app)
       .post(`/companies/${companyID}/reviews`)
       .send(review)
-      .set("Cookie", "token=valid-token")
+      //.set("Cookie", "token=valid-token")
       .expect(201);
-
-    // const { body: actualUser } = await signedInAgent
-    //   .get(versionRoute + `/users/${expectedUsername}`)
-    //   //.set("Cookie", "token=valid-token")
-    //   .expect(200);
 
     expect(jwt.verify).toBeCalledTimes(1);
     expect(actualValue).toMatchObject(expectedValue);
@@ -108,16 +112,11 @@ describe("Companies Route", () => {
       name: "humburn",
     }); //to mock DB login
 
-    const { body: actualValue } = await request(app)
+    const { body: actualValue } = await signedInAgent
       .post(`/companies/${companyID}/reviews`)
       .send(review)
-      .set("Cookie", "token=valid-token")
+      //.set("Cookie", "token=valid-token")
       .expect(400);
-
-    // const { body: actualUser } = await signedInAgent
-    //   .get(versionRoute + `/users/${expectedUsername}`)
-    //   //.set("Cookie", "token=valid-token")
-    //   .expect(200);
 
     expect(jwt.verify).toBeCalledTimes(1);
     expect(actualValue.error).toEqual(expectedValue);
@@ -136,11 +135,6 @@ describe("Companies Route", () => {
       .post(`/companies/${companyID}/reviews`)
       .send(review)
       .expect(401);
-
-    // const { body: actualUser } = await signedInAgent
-    //   .get(versionRoute + `/users/${expectedUsername}`)
-    //   //.set("Cookie", "token=valid-token")
-    //   .expect(200);
 
     expect(actualValue.error).toEqual(expectedValue);
   });
@@ -164,12 +158,31 @@ describe("Companies Route", () => {
       .set("Cookie", "invalidtoken=invalid-token")
       .expect(401);
 
-    // const { body: actualUser } = await signedInAgent
-    //   .get(versionRoute + `/users/${expectedUsername}`)
-    //   //.set("Cookie", "token=valid-token")
-    //   .expect(200);
-
     expect(jwt.verify).toBeCalledTimes(0);
+    expect(actualValue.error).toEqual(expectedValue);
+  });
+
+  it("POST /:id/reviews should return 404 when no company is found to be reviewed", async () => {
+    const companyID = "someInvalidCompanyID";
+    const review = {
+      rating: 3,
+      title: "another Title",
+      review: "another review",
+    };
+
+    const expectedValue = "No data found";
+
+    jwt.verify.mockReturnValueOnce({
+      name: "humburn",
+    }); //to mock DB login
+
+    const { body: actualValue } = await signedInAgent //request(app)
+      .post(`/companies/${companyID}/reviews`)
+      .send(review)
+      //.set("Cookie", "token=valid-token")
+      .expect(404);
+
+    expect(jwt.verify).toBeCalledTimes(1);
     expect(actualValue.error).toEqual(expectedValue);
   });
 });
